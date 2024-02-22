@@ -1,22 +1,34 @@
 import secrets
-from typing import Optional
+from typing import Annotated
 from pathlib import Path
 
-from pydantic import PostgresDsn, AnyHttpUrl, field_validator, ValidationInfo
+from pydantic import (
+    BeforeValidator,
+    PostgresDsn,
+    AnyHttpUrl,
+    AfterValidator,
+    ValidationInfo,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class PostgresSettings(BaseSettings):
-    SERVER: str
-    USER: str
-    PASSWORD: str
-    DB: str
+def db_uri_validator(v: str, info: ValidationInfo):
+    if isinstance(v, str) and v:
+        return v
+    values = info.data
+    uri = PostgresDsn.build(  # type: ignore
+        scheme="postgresql+psycopg",
+        username=values.get("POSTGRES_USER"),
+        password=values.get("POSTGRES_PASSWORD"),
+        host=values.get("POSTGRES_HOST"),
+        port=values.get("POSTGRES_PORT"),
+        path=f"{values.get('POSTGRES_DB') or ''}",
+    )
+    return str(uri)
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_nested_delimiter="__", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     PROJECT_NAME: str
 
@@ -29,22 +41,17 @@ class Settings(BaseSettings):
     SERVER_NAME: str
     SERVER_HOST: AnyHttpUrl
 
-    POSTGRES: PostgresSettings
-    SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
+    POSTGRES_HOST: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
 
-    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")  # type: ignore
-    @classmethod
-    def assemble_db_uri(cls, v: Optional[str], values: ValidationInfo):
-        if isinstance(v, str):
-            return v
-        postgres_cfg: PostgresSettings = values.data.get("POSTGRES")  # type: ignore
-        return PostgresDsn.build(  # type: ignore
-            scheme="postgresql",
-            username=postgres_cfg.USER,
-            password=postgres_cfg.PASSWORD,
-            host=postgres_cfg.SERVER,
-            path=f"{postgres_cfg.DB or ''}",
-        )
+    SQLALCHEMY_DATABASE_URI: Annotated[str, AfterValidator(db_uri_validator)] = ""
+
+    SUPERUSER_USERNAME: str
+    SUPERUSER_EMAIL: str
+    SUPERUSER_PASSWORD: str
 
 
 settings = Settings()  # type: ignore

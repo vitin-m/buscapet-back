@@ -8,6 +8,8 @@ from app.models import (
     Pet,
     PetRead,
     PetReadWSearch,
+    Search,
+    SearchReadWAll,
     UserCreate,
     User,
     UserCreateOpen,
@@ -15,7 +17,7 @@ from app.models import (
     UserReadWSearchPet,
     UserUpdate,
 )
-from ...deps import (
+from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
@@ -28,7 +30,18 @@ from ...deps import (
 router = APIRouter()
 
 
-@router.get("/me", response_model=UserReadWSearchPet)
+@router.get(
+    "/",
+    dependencies=[Depends(get_current_user)],
+    response_model=list[SearchReadWAll],
+)
+async def get_searches(session: SessionDep, skip: int = 0, limit: int = 100):
+    statement = select(Search).offset(skip).limit(limit)
+    users = session.exec(statement).all()
+    return users
+
+
+@router.get("/", response_model=SearchReadWAll)
 async def read_user_me(current_user: CurrentUser):
     return current_user
 

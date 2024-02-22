@@ -1,10 +1,8 @@
 import logging
-from pathlib import Path
 
 from sqlmodel import Session, select
 from dotenv import find_dotenv, load_dotenv
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
-
 
 from app.db import init_db
 from app.db.engine import engine
@@ -36,9 +34,11 @@ def main():
     dotenv_status = load_dotenv(find_dotenv())
     logger.info(f".env load status: {'sucess' if dotenv_status else 'failiure'}")
     wait_for_db_startup()
-    init_db()
+    with Session(engine) as session:
+        init_db(session, logger)
     logger.info("Database initialized")
-    Path().absolute().joinpath("static").mkdir(parents=True, exist_ok=True)
+
+    # Path().absolute().joinpath("static").mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":

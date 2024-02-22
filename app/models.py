@@ -3,7 +3,6 @@ from enum import StrEnum
 import json
 from typing import Union
 
-from fastapi import Form, UploadFile
 from pydantic import model_validator
 from sqlmodel import SQLModel, Field, Relationship
 
@@ -133,7 +132,7 @@ class Search(SearchBase, table=True):
 
     # Search -< User
     user_id: int = Field(default=None, foreign_key="user.id")
-    user: Union[User, None] = Relationship(back_populates="searches")
+    user: User = Relationship(back_populates="searches")
 
     # Search -< Pet
     pet_id: int = Field(default=None, foreign_key="pet.id")
@@ -151,11 +150,15 @@ class SearchReadWUser(SearchBase):
     user: Union[UserRead, None] = None
 
 
-class SearchReadWUserPet(SearchReadWUser):
+class SearchReadWPet(SearchBase):
+    pet: Union[PetRead, None] = None
+
+
+class SearchReadWUserPet(SearchReadWUser, SearchReadWPet):
     pet: Union[Pet, None] = None
 
 
-class SearchReadWUserPetSightings(SearchReadWUserPet):
+class SearchReadWAll(SearchReadWUserPet):
     sightings: list[Sighting] = []
 
 

@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  db:
+    container_name: buscapet-postgres
+    image: postgres:alpine
+    restart: always
+    ports:
+      - 5432:5432
+    
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pg-admin:
+    container_name: pg-admin-server
+    image: dpage/pgadmin4
+    ports:
+      - 5050:5050
+    
+    env_file:
+      - .env
+    depends_on:
+      - db
+  
+  app:
+    container_name: buscapet-app
+    build: .
+    ports:
+      - 8000:8000
+    
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

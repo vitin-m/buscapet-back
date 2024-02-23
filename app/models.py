@@ -65,7 +65,6 @@ class UserBase(SQLModel):
 
 class UserCreate(UserBase):
     password: str
-    phone: PhoneNumber
 
 
 class UserCreateOpen(SQLModel):

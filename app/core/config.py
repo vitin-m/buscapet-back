@@ -48,8 +48,8 @@ class Settings(BaseSettings):
 
     SQLALCHEMY_DATABASE_URI: Annotated[str, AfterValidator(db_uri_validator)] = ""
 
-    SUPERUSER_USERNAME: str
     SUPERUSER_EMAIL: str
+    SUPERUSER_PHONE: str
     SUPERUSER_PASSWORD: str
 
 

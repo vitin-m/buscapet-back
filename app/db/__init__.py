@@ -13,13 +13,13 @@ def init_db(session: Session, logger: Logger):
     logger.info("Table created")
 
     user = session.exec(
-        select(User).where(User.username == settings.SUPERUSER_USERNAME)
+        select(User).where(User.email == settings.SUPERUSER_EMAIL)
     ).first()
 
     if not user:
         superuser_in = UserCreate(
-            username=settings.SUPERUSER_USERNAME,
             email=settings.SUPERUSER_EMAIL,
+            phone=settings.SUPERUSER_PHONE,
             password=settings.SUPERUSER_PASSWORD,
             is_superuser=True,
         )

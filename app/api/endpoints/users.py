@@ -75,7 +75,7 @@ async def create_user(*, session: SessionDep, to_create: UserCreate):
     if user:
         raise HTTPException(
             status_code=400,
-            detail="The user with this username already exists in the system.",
+            detail="The user with this email already exists in the system.",
         )
 
     user = crud.create_user(session=session, to_create=to_create)

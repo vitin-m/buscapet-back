@@ -68,14 +68,16 @@ class UserCreate(UserBase):
 
 
 class UserCreateOpen(SQLModel):
-    email: str
     full_name: str
+    email: str
+    phone: str
     password: str
 
 
 class UserUpdate(SQLModel):
-    email: str | None = None
     full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
     password: str | None = None
 
 

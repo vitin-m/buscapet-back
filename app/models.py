@@ -55,7 +55,6 @@ class PetReadWUserSearch(PetReadWSearch, PetReadWUser):
 
 
 class UserBase(SQLModel):
-    username: str = Field(unique=True, index=True)
     email: str = Field(unique=True, index=True)
     phone: str = Field(unique=True, index=True)
     full_name: str | None = None
@@ -70,14 +69,12 @@ class UserCreate(UserBase):
 
 
 class UserCreateOpen(SQLModel):
-    username: str
     email: str
     full_name: str
     password: str
 
 
 class UserUpdate(SQLModel):
-    username: str | None = None
     email: str | None = None
     full_name: str | None = None
     password: str | None = None

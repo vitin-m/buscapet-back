@@ -3,7 +3,6 @@ from typing import Annotated
 from pathlib import Path
 
 from pydantic import (
-    BeforeValidator,
     PostgresDsn,
     AnyHttpUrl,
     AfterValidator,

@@ -1,9 +1,9 @@
 import datetime as dt
 from enum import StrEnum
-import json
 from typing import Union
 
-from pydantic import model_validator
+from pydantic import AnyHttpUrl
+from pydantic_extra_types.phone_numbers import PhoneNumber
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -22,12 +22,7 @@ class PetBase(SQLModel):
 
 
 class NewPet(PetBase):
-    @model_validator(mode="before")
-    @classmethod
-    def validate_to_json(cls, value):
-        if isinstance(value, str):
-            return cls(**json.loads(value))
-        return value
+    image: AnyHttpUrl
 
 
 class Pet(PetBase, table=True):
@@ -48,11 +43,11 @@ class PetRead(PetBase):
 
 
 class PetReadWUser(PetRead):
-    user: Union["User", None] = None
+    user: Union["UserRead", None] = None
 
 
 class PetReadWSearch(PetRead):
-    searches: list["Search"] = []
+    searches: list["SearchRead"] = []
 
 
 class PetReadWUserSearch(PetReadWSearch, PetReadWUser):
@@ -62,13 +57,16 @@ class PetReadWUserSearch(PetReadWSearch, PetReadWUser):
 class UserBase(SQLModel):
     username: str = Field(unique=True, index=True)
     email: str = Field(unique=True, index=True)
+    phone: str = Field(unique=True, index=True)
     full_name: str | None = None
     is_active: bool = True
     is_superuser: bool = False
+    image: str | None = None
 
 
 class UserCreate(UserBase):
     password: str
+    phone: PhoneNumber
 
 
 class UserCreateOpen(SQLModel):
@@ -101,30 +99,46 @@ class UserRead(UserBase):
 
 
 class UserReadWSearch(UserRead):
-    searches: list["Search"] = []
+    searches: list["SearchReadWAll"] = []
 
 
 class UserReadWPet(UserRead):
-    pets: list["Pet"] = []
+    pets: list["PetRead"] = []
 
 
 class UserReadWSearchPet(UserReadWSearch, UserReadWPet):
     pass
 
 
-class Sighting(SQLModel, table=True):
+class SightingBase(SQLModel):
     loc: str
-    datetime: dt.datetime = Field(default=dt.datetime.utcnow(), primary_key=True)
+    datetime: dt.datetime = Field(default=dt.datetime.utcnow())
+
+
+class NewSighting(SightingBase):
+    pass
+
+
+class Sighting(SightingBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
 
     # Sighting -< Search
     search_id: int = Field(default=None, foreign_key="search.id")
     search: "Search" = Relationship(back_populates="sightings")
 
 
+class SightingRead(SightingBase):
+    pass
+
+
 class SearchBase(SQLModel):
     created_at: dt.datetime = Field(default=dt.datetime.utcnow())
     poster: str
     is_active: bool = True
+
+
+class NewSearch(SearchBase):
+    sighting: Union[NewSighting, None]
 
 
 class Search(SearchBase, table=True):
@@ -139,7 +153,13 @@ class Search(SearchBase, table=True):
     pet: Pet = Relationship(back_populates="searches")
 
     # Search >- Sighting
-    sightings: list[Sighting] = Relationship()
+    sightings: list[Sighting] = Relationship(back_populates="search")
+
+
+class SearchUpdate(SQLModel):
+    sighting: Union[NewSighting, None]
+    poster: str | None
+    is_active: bool = True
 
 
 class SearchRead(SearchBase):
@@ -155,11 +175,11 @@ class SearchReadWPet(SearchBase):
 
 
 class SearchReadWUserPet(SearchReadWUser, SearchReadWPet):
-    pet: Union[Pet, None] = None
+    pass
 
 
 class SearchReadWAll(SearchReadWUserPet):
-    sightings: list[Sighting] = []
+    sightings: list[SightingRead] = []
 
 
 # Security

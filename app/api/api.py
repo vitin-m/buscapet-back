@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from sqlmodel import select
-from app.api.deps import SessionDep, get_current_user
+from app.api.deps import SessionDep
 
 from app.api.endpoints import login, users, pets, searches
 from app.models import Search, SearchReadWAll
@@ -16,10 +16,9 @@ api_router.include_router(
 
 @api_router.get(
     "/feed",
-    dependencies=[Depends(get_current_user)],
     response_model=list[SearchReadWAll],
 )
-async def feed(session: SessionDep, skip: int = 0, limit: int = 100):
+async def feed(session: SessionDep, skip: int = 0, limit: int = 10):
     statement = select(Search).offset(skip).limit(limit)
     searches = session.exec(statement).all()
     return searches

@@ -7,14 +7,13 @@ from app.models import (
     Pet,
     PetRead,
     PetReadWSearch,
+    PetReadWUserSearch,
     User,
-    UserRead,
 )
 from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_user,
-    save_image,
     val_pet_response,
     val_user_response,
 )
@@ -25,7 +24,7 @@ router = APIRouter()
 @router.get(
     "/",
     dependencies=[Depends(get_current_user)],
-    response_model=list[UserRead],
+    response_model=list[PetReadWSearch],
 )
 async def read_user_pets(user_id: int, session: SessionDep):
     user = val_user_response(session.get)(User, user_id)  # type: ignore
@@ -37,30 +36,30 @@ async def add_pet(
     user_id: int,
     session: SessionDep,
     current_user: CurrentUser,
-    image: UploadFile = File(...),
-    new_pet: NewPet = Form(...),
+    new_pet: NewPet,
 ):
     val_user_response(session.get, current_user.id)(User, user_id)  # type: ignore
 
-    image_link = await save_image(img=image, deco_str=new_pet.name)
-    pet = crud.create_pet(session, new_pet, user_id, str(image_link))  # type: ignore
+    pet = crud.create_pet(session, new_pet, user_id)
     return pet
 
 
 @router.get(
     "/{pet_id}",
     dependencies=[Depends(get_current_user)],
-    response_model=PetReadWSearch,
+    response_model=PetRead,
 )
-async def read_pet_by_id(user_id: int, session: SessionDep):
+async def read_pet_by_id(user_id: int, pet_id: int, session: SessionDep):
     val_user_response(session.get)(User, user_id)  # type: ignore
     pet = val_pet_response(session.get, user_id)(Pet, pet_id)  # type: ignore
-
     return pet
 
 
 @router.delete("/{pet_id}")
-async def remove_pet(pet_id: int, current_user: CurrentUser, session: SessionDep):
+async def remove_pet(
+    user_id: int, pet_id: int, current_user: CurrentUser, session: SessionDep
+):
+    val_user_response(session.get)(User, user_id)  # type: ignore
     pet = val_pet_response(session.get, current_user.id)(Pet, pet_id)  # type: ignore
     session.delete(pet)
     session.commit()
